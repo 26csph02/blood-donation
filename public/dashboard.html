@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MongoDB Dashboard - Blood Donation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container dashboard-container">
+        <h2>Blood Donation - MongoDB Dashboard</h2>
+        
+        <div style="text-align: center;">
+            <div class="mongo-badge" id="mongoBadge">
+                <span class="mongo-dot"></span>
+                <span id="mongoStatusText">Connecting to MongoDB...</span>
+            </div>
+        </div>
+
+        <!-- Database Stats Overview -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-number" id="statTotal">-</div>
+                <div class="stat-label">Total Donors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statO">-</div>
+                <div class="stat-label">O+ Donors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statA">-</div>
+                <div class="stat-label">A+ Donors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statB">-</div>
+                <div class="stat-label">B+ Donors</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="statAB">-</div>
+                <div class="stat-label">AB+ Donors</div>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="controls-bar">
+            <input type="text" id="searchInput" placeholder="Search by donor name or city..." onkeyup="if(event.key==='Enter') fetchDonors()">
+            <select id="bloodSelect" onchange="fetchDonors()">
+                <option value="">All Blood Groups</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+            </select>
+            <button type="button" onclick="fetchDonors()">Filter</button>
+            <button type="button" onclick="resetFilters()" style="background-color: #6c757d;">Reset</button>
+        </div>
+
+        <!-- View Switcher Tabs -->
+        <div class="tabs-bar">
+            <button class="tab-btn active" id="tabTable" onclick="switchTab('table')">Table View</button>
+            <button class="tab-btn" id="tabJson" onclick="switchTab('json')">{ } Raw MongoDB Documents</button>
+        </div>
+
+        <!-- Table View Section -->
+        <div id="tableView">
+            <div style="overflow-x: auto;">
+                <table class="donors-table">
+                    <thead>
+                        <tr>
+                            <th>MongoDB _id</th>
+                            <th>Donor Name</th>
+                            <th>Blood Group</th>
+                            <th>City / Location</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="donorsTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #888; padding: 20px;">Loading donors from MongoDB...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Raw JSON View Section -->
+        <div id="jsonView" style="display: none;">
+            <p style="text-align: left; font-size: 13px; color: #555; margin-bottom: 8px;">
+                Collection: <code>bloodDonationDB.donors</code> (JSON representation of active MongoDB documents):
+            </p>
+            <pre class="json-view" id="rawJson">Loading JSON...</pre>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px;">
+            <a href="register.html" style="margin: 0; font-weight: 600;">+ Register Another Donor</a>
+            <button type="button" onclick="refreshAll()" style="width: auto; padding: 8px 16px; background-color: #5bc0de;">Refresh Data</button>
+            <a href="index.html" style="margin: 0; color: #888;">Logout</a>
+        </div>
+    </div>
+
+    <script>
+        let currentDonors = [];
+
+        async function fetchStats() {
+            try {
+                const res = await fetch('/api/stats');
+                const data = await res.json();
+                
+                document.getElementById('mongoStatusText').textContent = 
+                    `Connected to ${data.connectionType || 'MongoDB'}: ${data.database} (${data.collection})`;
+                document.getElementById('statTotal').textContent = data.totalDonors;
+
+                const counts = {};
+                (data.groupCounts || []).forEach(g => {
+                    counts[g._id] = g.count;
+                });
+
+                document.getElementById('statO').textContent = (counts['O+'] || 0) + (counts['O-'] || 0);
+                document.getElementById('statA').textContent = (counts['A+'] || 0) + (counts['A-'] || 0);
+                document.getElementById('statB').textContent = (counts['B+'] || 0) + (counts['B-'] || 0);
+                document.getElementById('statAB').textContent = (counts['AB+'] || 0) + (counts['AB-'] || 0);
+            } catch (err) {
+                console.error(err);
+                document.getElementById('mongoStatusText').textContent = "MongoDB: Connection Error";
+                document.getElementById('mongoBadge').style.background = "#ffebee";
+                document.getElementById('mongoBadge').style.color = "#c62828";
+            }
+        }
+
+        async function fetchDonors() {
+            const bloodGroup = document.getElementById('bloodSelect').value;
+            const search = document.getElementById('searchInput').value.trim();
+
+            const params = new URLSearchParams();
+            if (bloodGroup) params.append('bloodGroup', bloodGroup);
+            if (search) params.append('search', search);
+
+            const url = '/api/donors' + (params.toString() ? '?' + params.toString() : '');
+
+            try {
+                const res = await fetch(url);
+                currentDonors = await res.json();
+                renderTable(currentDonors);
+                renderJson(currentDonors);
+            } catch (err) {
+                console.error('Error fetching donors:', err);
+                document.getElementById('donorsTableBody').innerHTML = 
+                    '<tr><td colspan="5" style="text-align:center; color: red;">Error loading data from MongoDB.</td></tr>';
+            }
+        }
+
+        function renderTable(donors) {
+            const tbody = document.getElementById('donorsTableBody');
+            if (!donors || donors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888; padding: 25px;">No donor documents found in MongoDB matching criteria.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = donors.map(d => `
+                <tr>
+                    <td class="doc-id" title="${d._id}">${d._id}</td>
+                    <td><strong>${escapeHtml(d.fullName)}</strong></td>
+                    <td><span class="blood-badge">${escapeHtml(d.bloodGroup)}</span></td>
+                    <td>${escapeHtml(d.city)}</td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteDonor('${d._id}', '${escapeHtml(d.fullName)}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderJson(donors) {
+            document.getElementById('rawJson').textContent = JSON.stringify(donors, null, 2);
+        }
+
+        async function deleteDonor(id, name) {
+            if (!confirm(`Are you sure you want to delete donor "${name}" from MongoDB?`)) return;
+            try {
+                const res = await fetch(`/api/donors/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    refreshAll();
+                } else {
+                    alert("Failed to delete record.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error deleting donor.");
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('bloodSelect').value = '';
+            fetchDonors();
+        }
+
+        function switchTab(tab) {
+            const tabTable = document.getElementById('tabTable');
+            const tabJson = document.getElementById('tabJson');
+            const tableView = document.getElementById('tableView');
+            const jsonView = document.getElementById('jsonView');
+
+            if (tab === 'table') {
+                tabTable.classList.add('active');
+                tabJson.classList.remove('active');
+                tableView.style.display = 'block';
+                jsonView.style.display = 'none';
+            } else {
+                tabTable.classList.remove('active');
+                tabJson.classList.add('active');
+                tableView.style.display = 'none';
+                jsonView.style.display = 'block';
+            }
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return String(text).replace(/[&<>"']/g, function(m) {
+                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m];
+            });
+        }
+
+        function refreshAll() {
+            fetchStats();
+            fetchDonors();
+        }
+
+        // Initialize on page load
+        refreshAll();
+    </script>
+</body>
+</html>
