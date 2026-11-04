@@ -5,23 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MongoDB Dashboard - Blood Donation</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .badge-status {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .status-completed { background: #e8f5e9; color: #2e7d32; }
+        .status-scheduled { background: #e3f2fd; color: #1565c0; }
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .top-action-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 9px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 13px;
+            display: inline-block;
+        }
+        .top-action-btn:hover { background-color: #218838; text-decoration: none; }
+    </style>
 </head>
 <body>
     <div class="container dashboard-container">
-        <h2>Blood Donation - MongoDB Dashboard</h2>
+        <h2>Blood Donation & MongoDB Cloud Dashboard</h2>
         
         <div style="text-align: center;">
             <div class="mongo-badge" id="mongoBadge">
                 <span class="mongo-dot"></span>
-                <span id="mongoStatusText">Connecting to MongoDB...</span>
+                <span id="mongoStatusText">Connecting to MongoDB Atlas...</span>
             </div>
         </div>
 
         <!-- Database Stats Overview -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
+                <div class="stat-number" id="statDonations">-</div>
+                <div class="stat-label">Blood Donations</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-number" id="statTotal">-</div>
-                <div class="stat-label">Total Donors</div>
+                <div class="stat-label">Registered Donors</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number" id="statO">-</div>
@@ -41,10 +67,22 @@
             </div>
         </div>
 
+        <!-- Action Quick Bar -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+            <div class="tabs-bar" style="margin: 0; border: none;">
+                <button class="tab-btn active" id="tabDonations" onclick="switchTab('donations')">💉 Blood Donations (<span id="countDonations">0</span>)</button>
+                <button class="tab-btn" id="tabDonors" onclick="switchTab('donors')">🩸 Donors List (<span id="countDonors">0</span>)</button>
+                <button class="tab-btn" id="tabJson" onclick="switchTab('json')">{ } Raw Atlas JSON</button>
+            </div>
+            <div>
+                <a href="add-donation.html" class="top-action-btn">+ Record Blood Donation</a>
+            </div>
+        </div>
+
         <!-- Filter Controls -->
-        <div class="controls-bar">
-            <input type="text" id="searchInput" placeholder="Search by donor name or city..." onkeyup="if(event.key==='Enter') fetchDonors()">
-            <select id="bloodSelect" onchange="fetchDonors()">
+        <div class="controls-bar" id="filterBar">
+            <input type="text" id="searchInput" placeholder="Search by name, city, or hospital..." onkeyup="if(event.key==='Enter') applyFilters()">
+            <select id="bloodSelect" onchange="applyFilters()">
                 <option value="">All Blood Groups</option>
                 <option value="A+">A+</option>
                 <option value="A-">A-</option>
@@ -55,18 +93,37 @@
                 <option value="AB+">AB+</option>
                 <option value="AB-">AB-</option>
             </select>
-            <button type="button" onclick="fetchDonors()">Filter</button>
+            <button type="button" onclick="applyFilters()">Filter</button>
             <button type="button" onclick="resetFilters()" style="background-color: #6c757d;">Reset</button>
         </div>
 
-        <!-- View Switcher Tabs -->
-        <div class="tabs-bar">
-            <button class="tab-btn active" id="tabTable" onclick="switchTab('table')">Table View</button>
-            <button class="tab-btn" id="tabJson" onclick="switchTab('json')">{ } Raw MongoDB Documents</button>
+        <!-- Blood Donations Table -->
+        <div id="donationsView">
+            <div style="overflow-x: auto;">
+                <table class="donors-table">
+                    <thead>
+                        <tr>
+                            <th>Donor Name</th>
+                            <th>Blood</th>
+                            <th>Units</th>
+                            <th>Hospital / Camp</th>
+                            <th>City</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="donationsTableBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; color: #888; padding: 20px;">Loading blood donations from MongoDB Atlas...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Table View Section -->
-        <div id="tableView">
+        <!-- Donors List Table -->
+        <div id="donorsView" style="display: none;">
             <div style="overflow-x: auto;">
                 <table class="donors-table">
                     <thead>
@@ -80,7 +137,7 @@
                     </thead>
                     <tbody id="donorsTableBody">
                         <tr>
-                            <td colspan="5" style="text-align: center; color: #888; padding: 20px;">Loading donors from MongoDB...</td>
+                            <td colspan="5" style="text-align: center; color: #888; padding: 20px;">Loading donors from MongoDB Atlas...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -90,21 +147,23 @@
         <!-- Raw JSON View Section -->
         <div id="jsonView" style="display: none;">
             <p style="text-align: left; font-size: 13px; color: #555; margin-bottom: 8px;">
-                Collection: <code>bloodDonationDB.donors</code> (JSON representation of active MongoDB documents):
+                Direct BSON/JSON from MongoDB Atlas Cloud (Collections: <code>donors</code> & <code>blood_donations</code>):
             </p>
             <pre class="json-view" id="rawJson">Loading JSON...</pre>
         </div>
 
         <!-- Bottom Actions -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px;">
-            <a href="register.html" style="margin: 0; font-weight: 600;">+ Register Another Donor</a>
-            <button type="button" onclick="refreshAll()" style="width: auto; padding: 8px 16px; background-color: #5bc0de;">Refresh Data</button>
+            <a href="register.html" style="margin: 0; font-weight: 600;">+ Register New Donor</a>
+            <button type="button" onclick="refreshAll()" style="width: auto; padding: 8px 16px; background-color: #5bc0de;">🔄 Refresh Live Data</button>
             <a href="index.html" style="margin: 0; color: #888;">Logout</a>
         </div>
     </div>
 
     <script>
-        let currentDonors = [];
+        let allDonors = [];
+        let allDonations = [];
+        let currentTab = 'donations';
 
         async function fetchStats() {
             try {
@@ -112,8 +171,9 @@
                 const data = await res.json();
                 
                 document.getElementById('mongoStatusText').textContent = 
-                    `Connected to ${data.connectionType || 'MongoDB'}: ${data.database} (${data.collection})`;
-                document.getElementById('statTotal').textContent = data.totalDonors;
+                    `Connected to ${data.connectionType || 'MongoDB Atlas'}: ${data.database} (donors, blood_donations)`;
+                document.getElementById('statTotal').textContent = data.totalDonors || 0;
+                document.getElementById('statDonations').textContent = data.totalDonations || 0;
 
                 const counts = {};
                 (data.groupCounts || []).forEach(g => {
@@ -132,32 +192,60 @@
             }
         }
 
-        async function fetchDonors() {
-            const bloodGroup = document.getElementById('bloodSelect').value;
-            const search = document.getElementById('searchInput').value.trim();
-
-            const params = new URLSearchParams();
-            if (bloodGroup) params.append('bloodGroup', bloodGroup);
-            if (search) params.append('search', search);
-
-            const url = '/api/donors' + (params.toString() ? '?' + params.toString() : '');
-
+        async function fetchDonations() {
             try {
-                const res = await fetch(url);
-                currentDonors = await res.json();
-                renderTable(currentDonors);
-                renderJson(currentDonors);
+                const res = await fetch('/api/donations');
+                allDonations = await res.json();
+                document.getElementById('countDonations').textContent = allDonations.length;
+                renderDonationsTable(allDonations);
+                updateJsonView();
             } catch (err) {
-                console.error('Error fetching donors:', err);
-                document.getElementById('donorsTableBody').innerHTML = 
-                    '<tr><td colspan="5" style="text-align:center; color: red;">Error loading data from MongoDB.</td></tr>';
+                console.error('Error fetching donations:', err);
             }
         }
 
-        function renderTable(donors) {
+        async function fetchDonors() {
+            try {
+                const res = await fetch('/api/donors');
+                allDonors = await res.json();
+                document.getElementById('countDonors').textContent = allDonors.length;
+                renderDonorsTable(allDonors);
+                updateJsonView();
+            } catch (err) {
+                console.error('Error fetching donors:', err);
+            }
+        }
+
+        function renderDonationsTable(donations) {
+            const tbody = document.getElementById('donationsTableBody');
+            if (!donations || donations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #888; padding: 25px;">No blood donations recorded yet. Click "+ Record Blood Donation" to add one!</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = donations.map(d => {
+                const dateStr = d.donationDate ? new Date(d.donationDate).toLocaleDateString() : 'N/A';
+                const statusClass = 'status-' + (d.status || 'completed').toLowerCase();
+                return `
+                <tr>
+                    <td><strong>${escapeHtml(d.donorName)}</strong></td>
+                    <td><span class="blood-badge">${escapeHtml(d.bloodGroup)}</span></td>
+                    <td>${d.units || 1} Bag(s)</td>
+                    <td>${escapeHtml(d.hospitalOrCamp || '-')}</td>
+                    <td>${escapeHtml(d.city || '-')}</td>
+                    <td style="font-size: 12px; color: #666;">${dateStr}</td>
+                    <td><span class="badge-status ${statusClass}">${escapeHtml(d.status || 'Completed')}</span></td>
+                    <td>
+                        <button class="btn-delete" onclick="deleteDonation('${d._id}', '${escapeHtml(d.donorName)}')">Delete</button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
+        function renderDonorsTable(donors) {
             const tbody = document.getElementById('donorsTableBody');
             if (!donors || donors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888; padding: 25px;">No donor documents found in MongoDB matching criteria.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888; padding: 25px;">No donor documents found.</td></tr>';
                 return;
             }
 
@@ -174,12 +262,63 @@
             `).join('');
         }
 
-        function renderJson(donors) {
-            document.getElementById('rawJson').textContent = JSON.stringify(donors, null, 2);
+        function updateJsonView() {
+            document.getElementById('rawJson').textContent = JSON.stringify({
+                blood_donations: allDonations,
+                donors: allDonors
+            }, null, 2);
+        }
+
+        function applyFilters() {
+            const blood = document.getElementById('bloodSelect').value;
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            if (currentTab === 'donations') {
+                const filtered = allDonations.filter(d => {
+                    const matchBlood = !blood || d.bloodGroup === blood;
+                    const matchSearch = !search || 
+                        (d.donorName && d.donorName.toLowerCase().includes(search)) ||
+                        (d.city && d.city.toLowerCase().includes(search)) ||
+                        (d.hospitalOrCamp && d.hospitalOrCamp.toLowerCase().includes(search));
+                    return matchBlood && matchSearch;
+                });
+                renderDonationsTable(filtered);
+            } else if (currentTab === 'donors') {
+                const filtered = allDonors.filter(d => {
+                    const matchBlood = !blood || d.bloodGroup === blood;
+                    const matchSearch = !search || 
+                        (d.fullName && d.fullName.toLowerCase().includes(search)) ||
+                        (d.city && d.city.toLowerCase().includes(search));
+                    return matchBlood && matchSearch;
+                });
+                renderDonorsTable(filtered);
+            }
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('bloodSelect').value = '';
+            renderDonationsTable(allDonations);
+            renderDonorsTable(allDonors);
+        }
+
+        async function deleteDonation(id, name) {
+            if (!confirm(`Delete blood donation record for "${name}" from MongoDB?`)) return;
+            try {
+                const res = await fetch(`/api/donations/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    refreshAll();
+                } else {
+                    alert("Failed to delete record.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Error deleting blood donation.");
+            }
         }
 
         async function deleteDonor(id, name) {
-            if (!confirm(`Are you sure you want to delete donor "${name}" from MongoDB?`)) return;
+            if (!confirm(`Delete donor "${name}" from MongoDB?`)) return;
             try {
                 const res = await fetch(`/api/donors/${id}`, { method: 'DELETE' });
                 if (res.ok) {
@@ -193,29 +332,16 @@
             }
         }
 
-        function resetFilters() {
-            document.getElementById('searchInput').value = '';
-            document.getElementById('bloodSelect').value = '';
-            fetchDonors();
-        }
-
         function switchTab(tab) {
-            const tabTable = document.getElementById('tabTable');
-            const tabJson = document.getElementById('tabJson');
-            const tableView = document.getElementById('tableView');
-            const jsonView = document.getElementById('jsonView');
+            currentTab = tab;
+            document.getElementById('tabDonations').classList.toggle('active', tab === 'donations');
+            document.getElementById('tabDonors').classList.toggle('active', tab === 'donors');
+            document.getElementById('tabJson').classList.toggle('active', tab === 'json');
 
-            if (tab === 'table') {
-                tabTable.classList.add('active');
-                tabJson.classList.remove('active');
-                tableView.style.display = 'block';
-                jsonView.style.display = 'none';
-            } else {
-                tabTable.classList.remove('active');
-                tabJson.classList.add('active');
-                tableView.style.display = 'none';
-                jsonView.style.display = 'block';
-            }
+            document.getElementById('donationsView').style.display = tab === 'donations' ? 'block' : 'none';
+            document.getElementById('donorsView').style.display = tab === 'donors' ? 'block' : 'none';
+            document.getElementById('jsonView').style.display = tab === 'json' ? 'block' : 'none';
+            document.getElementById('filterBar').style.display = tab === 'json' ? 'none' : 'flex';
         }
 
         function escapeHtml(text) {
@@ -227,10 +353,11 @@
 
         function refreshAll() {
             fetchStats();
+            fetchDonations();
             fetchDonors();
         }
 
-        // Initialize on page load
+        // Initialize on load
         refreshAll();
     </script>
 </body>
