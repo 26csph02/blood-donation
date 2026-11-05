@@ -2,20 +2,37 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Blood Donation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Blood Donation System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="container">
-        <h2>Donor Login</h2>
-        <form action="/dashboard.html">
-            <label>Email</label>
-            <input type="email" required placeholder="Enter email">
-            <label>Password</label>
-            <input type="password" required placeholder="Enter password">
-            <button type="submit">Login</button>
+<body class="center-body">
+
+    <div class="card">
+        <div class="logo">🩸</div>
+        <h2>Blood Donation System</h2>
+        <p class="subtitle">Please login to continue</p>
+
+        <!-- Login Form -->
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label for="email">Email or Full Name</label>
+                <input type="text" id="email" name="email" required placeholder="Enter email or name">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter password">
+            </div>
+
+            <button type="submit" class="btn-primary">Login</button>
         </form>
-        <a href="register.html">Don't have an account? Register</a>
+
+        <div class="links">
+            <p>Don't have an account? <a href="register.html">Register as a Donor</a></p>
+            <p><a href="home.html" class="guest-link">Skip to Home Page (Guest) &rarr;</a></p>
+        </div>
     </div>
+
 </body>
 </html>
