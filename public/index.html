@@ -2,35 +2,29 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Blood Donation System</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="center-body">
+<body>
 
-    <div class="card">
-        <div class="logo">🩸</div>
-        <h2>Blood Donation System</h2>
-        <p class="subtitle">Please login to continue</p>
+    <div class="login-box">
+        <h2>🩸 Blood Donation</h2>
+        <p class="tagline">Donor Login</p>
 
         <!-- Login Form -->
         <form action="/login" method="POST">
-            <div class="form-group">
-                <label for="email">Email or Full Name</label>
-                <input type="text" id="email" name="email" required placeholder="Enter email or name">
-            </div>
+            <label>Email or Name:</label>
+            <input type="text" name="email" required placeholder="Enter registered email or name">
 
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required placeholder="Enter password">
-            </div>
+            <label>Password:</label>
+            <input type="password" name="password" required placeholder="Enter your password">
 
-            <button type="submit" class="btn-primary">Login</button>
+            <button type="submit">Login</button>
         </form>
 
-        <div class="links">
-            <p>Don't have an account? <a href="register.html">Register as a Donor</a></p>
-            <p><a href="home.html" class="guest-link">Skip to Home Page (Guest) &rarr;</a></p>
+        <div class="bottom-links">
+            <p>New user? <a href="register.html">Register here</a></p>
+            <p><a href="home.html" style="color: #666; font-size: 13px;">View Home Page as Guest &rarr;</a></p>
         </div>
     </div>
 

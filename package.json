@@ -1,18 +1,12 @@
 {
-  "name": "blood-donation",
+  "name": "blood-donation-mini-project",
   "version": "1.0.0",
-  "description": "",
+  "description": "Simple Blood Donation Mini Project for College Students",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "express": "^5.3.0",
-    "mongoose": "^9.11.4"
+    "mongodb": "^6.0.0"
   }
 }

@@ -1,123 +1,171 @@
-// ==========================================
-// Blood Donation Mini Project - server.js
-// Technologies: Node.js, Express, MongoDB (Mongoose)
-// ==========================================
+// ======================================================
+// Blood Donation Mini Project
+// Built with pure Node.js and MongoDB (No Express framework)
+// ======================================================
 
-const express = require('express');
-const mongoose = require('mongoose');
+const http = require('http');
+const fs = require('fs');
 const path = require('path');
+const querystring = require('querystring');
+const { MongoClient } = require('mongodb');
 
-const app = express();
 const PORT = 3000;
 
-// Middleware to parse form data and JSON
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
+// MongoDB Atlas Connection URI
+const MONGO_URI = 'mongodb+srv://26csph02_db_user:rncYE7UorSbHePeU@cluster0.olfxphz.mongodb.net/?retryWrites=true&w=majority';
+let db;
 
-// Serve static HTML, CSS, JS files from the "public" folder
-app.use(express.static(path.join(__dirname, 'public')));
-
-// MongoDB Atlas Connection URL
-const MONGO_URI = 'mongodb+srv://26csph02_db_user:rncYE7UorSbHePeU@cluster0.olfxphz.mongodb.net/bloodDonationDB?retryWrites=true&w=majority';
-const LOCAL_URI = 'mongodb://127.0.0.1:27017/bloodDonationDB';
-
-// Connect to MongoDB
-mongoose.connect(MONGO_URI)
-    .then(() => console.log('Connected to MongoDB Atlas successfully!'))
+// Connect to MongoDB Database
+MongoClient.connect(MONGO_URI)
+    .then((client) => {
+        db = client.db('bloodDonationDB');
+        console.log('Connected to MongoDB Atlas successfully!');
+    })
     .catch((err) => {
-        console.log('Atlas error, falling back to Local MongoDB:', err.message);
-        mongoose.connect(LOCAL_URI)
-            .then(() => console.log('Connected to Local MongoDB!'))
-            .catch((e) => console.log('MongoDB connection error:', e.message));
+        console.log('Atlas error, trying local MongoDB:', err.message);
+        MongoClient.connect('mongodb://127.0.0.1:27017')
+            .then((client) => {
+                db = client.db('bloodDonationDB');
+                console.log('Connected to Local MongoDB!');
+            })
+            .catch((e) => console.log('Database error:', e.message));
     });
 
-// Define Donor Schema
-const donorSchema = new mongoose.Schema({
-    fullName: { type: String, required: true },
-    email: { type: String },
-    password: { type: String, required: true },
-    bloodGroup: { type: String, required: true },
-    phone: { type: String, default: 'Not Provided' },
-    city: { type: String, required: true }
-});
-
-const Donor = mongoose.model('Donor', donorSchema);
-
-// ------------------------------------------
-// 1. ROUTE: User Registration
-// ------------------------------------------
-app.post('/register', async (req, res) => {
-    try {
-        const { fullName, email, password, bloodGroup, phone, city } = req.body;
-
-        // Check if user already exists
-        if (email) {
-            const existing = await Donor.findOne({ email });
-            if (existing) {
-                return res.send("<script>alert('Email already registered! Please login.'); window.location.href='/index.html';</script>");
-            }
-        }
-
-        // Create new donor
-        const newDonor = new Donor({ fullName, email, password, bloodGroup, phone, city });
-        await newDonor.save();
-
-        res.send("<script>alert('Registration Successful! Please login.'); window.location.href='/index.html';</script>");
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Error registering donor: " + err.message);
-    }
-});
-
-// ------------------------------------------
-// 2. ROUTE: User Login
-// ------------------------------------------
-app.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        // Search user by email (or username) and password
-        const user = await Donor.findOne({
-            $or: [{ email: email }, { fullName: email }],
-            password: password
-        });
-
-        if (user) {
-            // Login success - redirect to home page with user name
-            res.redirect(`/home.html?name=${encodeURIComponent(user.fullName)}`);
+// Helper function to serve HTML, CSS files
+function serveFile(res, filePath, contentType) {
+    fs.readFile(filePath, (err, data) => {
+        if (err) {
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('404 Not Found');
         } else {
-            // Login failed
-            res.send("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/index.html';</script>");
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(data);
         }
-    } catch (err) {
-        console.error(err);
-        res.status(500).send("Login error: " + err.message);
+    });
+}
+
+// Create HTTP Server
+const server = http.createServer((req, res) => {
+    const reqUrl = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = reqUrl.pathname;
+
+    // 1. SERVE STATIC FILES (GET requests)
+    if (req.method === 'GET') {
+        if (pathname === '/' || pathname === '/index.html') {
+            return serveFile(res, path.join(__dirname, 'public', 'index.html'), 'text/html');
+        }
+        if (pathname === '/register.html') {
+            return serveFile(res, path.join(__dirname, 'public', 'register.html'), 'text/html');
+        }
+        if (pathname === '/home.html') {
+            return serveFile(res, path.join(__dirname, 'public', 'home.html'), 'text/html');
+        }
+        if (pathname === '/style.css') {
+            return serveFile(res, path.join(__dirname, 'public', 'style.css'), 'text/css');
+        }
+
+        // 2. API ROUTE: GET DONORS (Search & Filter)
+        if (pathname === '/api/donors') {
+            const bloodGroup = reqUrl.searchParams.get('bloodGroup');
+            let filter = {};
+
+            if (bloodGroup && bloodGroup !== 'All') {
+                filter.bloodGroup = bloodGroup;
+            }
+
+            if (!db) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                return res.end(JSON.stringify([]));
+            }
+
+            db.collection('donors').find(filter).toArray()
+                .then((donors) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(donors));
+                })
+                .catch((err) => {
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: err.message }));
+                });
+            return;
+        }
     }
+
+    // 3. POST ROUTE: USER REGISTRATION
+    if (req.method === 'POST' && pathname === '/register') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            const formData = querystring.parse(body);
+            const { fullName, email, password, bloodGroup, phone, city } = formData;
+
+            try {
+                // Check if email already registered
+                if (email) {
+                    const existing = await db.collection('donors').findOne({ email: email });
+                    if (existing) {
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        return res.end("<script>alert('Email already registered! Please login.'); window.location.href='/index.html';</script>");
+                    }
+                }
+
+                // Insert new donor into MongoDB
+                await db.collection('donors').insertOne({
+                    fullName,
+                    email,
+                    password,
+                    bloodGroup,
+                    phone: phone || 'Not Provided',
+                    city
+                });
+
+                res.writeHead(200, { 'Content-Type': 'text/html' });
+                res.end("<script>alert('Registration Successful! Please login.'); window.location.href='/index.html';</script>");
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Error registering user: ' + err.message);
+            }
+        });
+        return;
+    }
+
+    // 4. POST ROUTE: USER LOGIN
+    if (req.method === 'POST' && pathname === '/login') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            const formData = querystring.parse(body);
+            const { email, password } = formData;
+
+            try {
+                // Check credentials in database
+                const user = await db.collection('donors').findOne({
+                    $or: [{ email: email }, { fullName: email }],
+                    password: password
+                });
+
+                if (user) {
+                    // Login success -> redirect to home page
+                    res.writeHead(302, { 'Location': `/home.html?name=${encodeURIComponent(user.fullName)}` });
+                    res.end();
+                } else {
+                    res.writeHead(200, { 'Content-Type': 'text/html' });
+                    res.end("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/index.html';</script>");
+                }
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'text/plain' });
+                res.end('Error during login: ' + err.message);
+            }
+        });
+        return;
+    }
+
+    // Default 404
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Page Not Found');
 });
 
-// ------------------------------------------
-// 3. ROUTE: Fetch Donors List (with filter)
-// ------------------------------------------
-app.get('/api/donors', async (req, res) => {
-    try {
-        const { bloodGroup } = req.query;
-        let filter = {};
-
-        if (bloodGroup && bloodGroup !== 'All') {
-            filter.bloodGroup = bloodGroup;
-        }
-
-        const donors = await Donor.find(filter).select('-password');
-        res.json(donors);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Failed to fetch donors." });
-    }
-});
-
-// ------------------------------------------
-// Start Server
-// ------------------------------------------
-app.listen(PORT, () => {
-    console.log(`Server running smoothly at http://localhost:${PORT}`);
+// Start Server on Port 3000
+server.listen(PORT, () => {
+    console.log(`Server running at http://localhost:${PORT}`);
 });
