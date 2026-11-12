@@ -39,29 +39,12 @@ blood-donation/
 
 ## 🚀 Getting Started
 
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) installed on your system.
-
-### 2. Installation
-Clone the repository:
-```bash
-git clone https://github.com/26csph02/blood-donation.git
-cd blood-donation
-```
-
-Install dependencies:
-```bash
-npm install
-```
-
-### 3. Run Application
-Start the Node.js server:
+Start the application:
 ```bash
 npm start
 ```
-*(or run `node server.js`)*
 
-Open your browser and navigate to:
+Open your browser:
 ```text
 http://localhost:3000
 ```

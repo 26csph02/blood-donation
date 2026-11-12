@@ -1,5 +1,5 @@
 {
-  "name": "blood-donation-mini-project",
+  "name": "blood-donation-system",
   "version": "1.0.0",
   "description": "Blood Donation Management System",
   "main": "server.js",
