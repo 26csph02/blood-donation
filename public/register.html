@@ -7,9 +7,21 @@
 </head>
 <body>
 
+    <!-- Simple Top Navigation -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <h2><a href="index.html" style="text-decoration: none; color: #c9302c;">🩸 Blood Donation System</a></h2>
+        </div>
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+        </div>
+    </div>
+
+    <!-- Registration Card -->
     <div class="login-box" style="width: 400px;">
         <h2>🩸 Donor Registration</h2>
-        <p class="tagline">Create an account to become a donor</p>
+        <p class="tagline">Create an account to become a voluntary donor</p>
 
         <!-- Registration Form -->
         <form action="/register" method="POST">
@@ -41,11 +53,12 @@
             <label>Password:</label>
             <input type="password" name="password" required placeholder="Enter password">
 
-            <button type="submit">Register</button>
+            <button type="submit">Register as Donor</button>
         </form>
 
         <div class="bottom-links">
-            <p>Already have an account? <a href="index.html">Login here</a></p>
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+            <p style="margin-top: 10px;"><a href="index.html">← Back to Home Page</a></p>
         </div>
     </div>
 

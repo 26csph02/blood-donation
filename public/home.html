@@ -4,38 +4,31 @@
     <meta charset="UTF-8">
     <title>Home - Blood Donation System</title>
     <link rel="stylesheet" href="style.css">
-    <script>
-        // Check if user is logged in before rendering the page
-        const urlParams = new URLSearchParams(window.location.search);
-        let loggedInName = urlParams.get('name');
-
-        if (loggedInName) {
-            // Store user session in browser
-            sessionStorage.setItem('loggedInUser', loggedInName);
-        } else {
-            // Retrieve existing session
-            loggedInName = sessionStorage.getItem('loggedInUser');
-        }
-
-        // If not logged in, redirect to login page immediately
-        if (!loggedInName) {
-            alert("Please login or register first to access the Home Page!");
-            window.location.href = "index.html";
-        }
-    </script>
 </head>
 <body>
 
-    <!-- Header & Navigation -->
+    <!-- Top Navigation Bar -->
     <div class="top-nav">
         <div class="nav-left">
             <h2>🩸 Blood Donation System</h2>
         </div>
         <div class="nav-right">
-            <span id="userGreeting" style="font-weight: bold; margin-right: 15px;">Welcome!</span>
-            <a href="home.html">Home</a>
-            <a href="register.html">+ Register Donor</a>
-            <a href="javascript:void(0)" onclick="logout()" style="color: #c9302c; font-weight: bold; cursor: pointer;">Logout</a>
+            <a href="index.html">Home</a>
+            <a href="#find-donors">Find Donors</a>
+            <a href="#why-donate">Why Donate</a>
+
+            <!-- Shown when user is NOT logged in -->
+            <span id="guestNav">
+                <a href="login.html" class="nav-btn nav-btn-login">Login</a>
+                <a href="register.html" class="nav-btn nav-btn-register">Register</a>
+            </span>
+
+            <!-- Shown when user IS logged in -->
+            <span id="userNav" style="display: none;">
+                <span id="userGreeting" style="font-weight: bold; margin-left: 15px; color: #333;">Welcome!</span>
+                <a href="register.html" style="color: #c9302c; font-weight: bold;">+ Add Donor</a>
+                <a href="javascript:void(0)" onclick="logout()" class="nav-btn nav-btn-logout">Logout</a>
+            </span>
         </div>
     </div>
 
@@ -45,14 +38,18 @@
         <!-- Welcome Banner -->
         <div class="banner">
             <h1>Save Lives - Donate Blood</h1>
-            <p>Search for voluntary blood donors in your area or register yourself to help someone in emergency.</p>
+            <p>Search for voluntary blood donors in your area or login to register as a donor.</p>
+            <div style="margin-top: 20px;">
+                <a href="#find-donors" class="banner-btn">Find Donors</a>
+                <a href="login.html" id="bannerLoginLink" class="banner-btn-outline">Login to Account</a>
+            </div>
         </div>
 
-        <!-- Search Box -->
-        <div class="content-box">
-            <h3>Find Donors by Blood Group</h3>
+        <!-- Search Donors Section -->
+        <div class="content-box" id="find-donors">
+            <h3>🔍 Find Donors by Blood Group</h3>
             <div class="search-row">
-                <label for="bgSelect" style="font-weight: bold;">Blood Group:</label>
+                <label for="bgSelect" style="font-weight: bold; margin-top: 0;">Select Group:</label>
                 <select id="bgSelect">
                     <option value="All">All Blood Groups</option>
                     <option value="A+">A+</option>
@@ -87,18 +84,18 @@
         </div>
 
         <!-- Why Donate Blood Section -->
-        <div class="facts-container">
+        <div class="facts-container" id="why-donate">
             <div class="fact-box">
                 <h4>❤️ Save Up to 3 Lives</h4>
-                <p>One single blood donation can help save up to 3 different patients in need of red blood cells, plasma, or platelets.</p>
+                <p>One single blood donation can help save up to 3 patients in need of red blood cells, plasma, or platelets.</p>
             </div>
             <div class="fact-box">
                 <h4>🏥 High Demand</h4>
-                <p>Every two seconds, someone in the hospital requires blood for surgeries, cancer treatment, or accidents.</p>
+                <p>Every two seconds, someone in the hospital requires blood for surgeries, emergency treatment, or accidents.</p>
             </div>
             <div class="fact-box">
                 <h4>🤝 Safe & Quick</h4>
-                <p>Donation takes about 10-15 minutes and all equipment used is sterile and disposable.</p>
+                <p>Donation takes only about 10-15 minutes and all equipment used is 100% sterile and disposable.</p>
             </div>
         </div>
 
@@ -109,25 +106,48 @@
         <p>Blood Donation System &copy; 2026</p>
     </div>
 
-    <!-- JavaScript to Fetch Donors & Manage Session -->
+    <!-- JavaScript for Authentication & Donor Table -->
     <script>
-        // Set user greeting
+        // 1. Check Login Session
+        const urlParams = new URLSearchParams(window.location.search);
+        let loggedInName = urlParams.get('name');
+
         if (loggedInName) {
-            document.getElementById('userGreeting').innerText = "Welcome, " + loggedInName + "!";
+            sessionStorage.setItem('loggedInUser', loggedInName);
+            // Clean url query param
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            loggedInName = sessionStorage.getItem('loggedInUser');
         }
 
-        // Logout function
+        // 2. Adjust UI based on Login State
+        if (loggedInName) {
+            document.getElementById('guestNav').style.display = 'none';
+            document.getElementById('userNav').style.display = 'inline-block';
+            document.getElementById('userGreeting').innerText = "Welcome, " + loggedInName + "!";
+            
+            const bannerLoginLink = document.getElementById('bannerLoginLink');
+            if (bannerLoginLink) {
+                bannerLoginLink.innerText = "+ Register as Donor";
+                bannerLoginLink.href = "register.html";
+            }
+        } else {
+            document.getElementById('guestNav').style.display = 'inline-block';
+            document.getElementById('userNav').style.display = 'none';
+        }
+
+        // 3. Logout function
         function logout() {
             sessionStorage.removeItem('loggedInUser');
             alert("You have been logged out successfully.");
             window.location.href = "index.html";
         }
 
-        // Fetch donors from server
+        // 4. Fetch Donors from Server
         function getDonors() {
             const bloodGroup = document.getElementById('bgSelect').value;
             const tbody = document.getElementById('tableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading donors...</td></tr>';
 
             const url = bloodGroup && bloodGroup !== 'All' 
                 ? '/api/donors?bloodGroup=' + encodeURIComponent(bloodGroup)
@@ -157,7 +177,7 @@
                 });
         }
 
-        // Load all donors initially
+        // Load donors on page load
         getDonors();
     </script>
 

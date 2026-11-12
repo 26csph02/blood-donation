@@ -2,30 +2,184 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - Blood Donation System</title>
+    <title>Home - Blood Donation System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="login-box">
-        <h2>🩸 Blood Donation</h2>
-        <p class="tagline">Please login to access the system</p>
+    <!-- Top Navigation Bar -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <h2>🩸 Blood Donation System</h2>
+        </div>
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="#find-donors">Find Donors</a>
+            <a href="#why-donate">Why Donate</a>
 
-        <!-- Login Form -->
-        <form action="/login" method="POST">
-            <label>Email or Full Name:</label>
-            <input type="text" name="email" required placeholder="Enter your registered email or name">
+            <!-- Shown when user is NOT logged in -->
+            <span id="guestNav">
+                <a href="login.html" class="nav-btn nav-btn-login">Login</a>
+                <a href="register.html" class="nav-btn nav-btn-register">Register</a>
+            </span>
 
-            <label>Password:</label>
-            <input type="password" name="password" required placeholder="Enter your password">
-
-            <button type="submit">Login</button>
-        </form>
-
-        <div class="bottom-links">
-            <p>New donor? <a href="register.html">Register here</a></p>
+            <!-- Shown when user IS logged in -->
+            <span id="userNav" style="display: none;">
+                <span id="userGreeting" style="font-weight: bold; margin-left: 15px; color: #333;">Welcome!</span>
+                <a href="register.html" style="color: #c9302c; font-weight: bold;">+ Add Donor</a>
+                <a href="javascript:void(0)" onclick="logout()" class="nav-btn nav-btn-logout">Logout</a>
+            </span>
         </div>
     </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+
+        <!-- Welcome Banner -->
+        <div class="banner">
+            <h1>Save Lives - Donate Blood</h1>
+            <p>Search for voluntary blood donors in your area or login to register as a donor.</p>
+            <div style="margin-top: 20px;">
+                <a href="#find-donors" class="banner-btn">Find Donors</a>
+                <a href="login.html" id="bannerLoginLink" class="banner-btn-outline">Login to Account</a>
+            </div>
+        </div>
+
+        <!-- Search Donors Section -->
+        <div class="content-box" id="find-donors">
+            <h3>🔍 Find Donors by Blood Group</h3>
+            <div class="search-row">
+                <label for="bgSelect" style="font-weight: bold; margin-top: 0;">Select Group:</label>
+                <select id="bgSelect">
+                    <option value="All">All Blood Groups</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                </select>
+                <button type="button" onclick="getDonors()">Search</button>
+            </div>
+
+            <!-- Donors Table -->
+            <table class="donor-table">
+                <thead>
+                    <tr>
+                        <th>Sr. No.</th>
+                        <th>Donor Name</th>
+                        <th>Blood Group</th>
+                        <th>City</th>
+                        <th>Phone</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #888;">Loading donors from database...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Why Donate Blood Section -->
+        <div class="facts-container" id="why-donate">
+            <div class="fact-box">
+                <h4>❤️ Save Up to 3 Lives</h4>
+                <p>One single blood donation can help save up to 3 patients in need of red blood cells, plasma, or platelets.</p>
+            </div>
+            <div class="fact-box">
+                <h4>🏥 High Demand</h4>
+                <p>Every two seconds, someone in the hospital requires blood for surgeries, emergency treatment, or accidents.</p>
+            </div>
+            <div class="fact-box">
+                <h4>🤝 Safe & Quick</h4>
+                <p>Donation takes only about 10-15 minutes and all equipment used is 100% sterile and disposable.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Blood Donation System &copy; 2026</p>
+    </div>
+
+    <!-- JavaScript for Authentication & Donor Table -->
+    <script>
+        // 1. Check Login Session
+        const urlParams = new URLSearchParams(window.location.search);
+        let loggedInName = urlParams.get('name');
+
+        if (loggedInName) {
+            sessionStorage.setItem('loggedInUser', loggedInName);
+            // Clean url query param
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else {
+            loggedInName = sessionStorage.getItem('loggedInUser');
+        }
+
+        // 2. Adjust UI based on Login State
+        if (loggedInName) {
+            document.getElementById('guestNav').style.display = 'none';
+            document.getElementById('userNav').style.display = 'inline-block';
+            document.getElementById('userGreeting').innerText = "Welcome, " + loggedInName + "!";
+            
+            const bannerLoginLink = document.getElementById('bannerLoginLink');
+            if (bannerLoginLink) {
+                bannerLoginLink.innerText = "+ Register as Donor";
+                bannerLoginLink.href = "register.html";
+            }
+        } else {
+            document.getElementById('guestNav').style.display = 'inline-block';
+            document.getElementById('userNav').style.display = 'none';
+        }
+
+        // 3. Logout function
+        function logout() {
+            sessionStorage.removeItem('loggedInUser');
+            alert("You have been logged out successfully.");
+            window.location.href = "index.html";
+        }
+
+        // 4. Fetch Donors from Server
+        function getDonors() {
+            const bloodGroup = document.getElementById('bgSelect').value;
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading donors...</td></tr>';
+
+            const url = bloodGroup && bloodGroup !== 'All' 
+                ? '/api/donors?bloodGroup=' + encodeURIComponent(bloodGroup)
+                : '/api/donors';
+
+            fetch(url)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: #888;">No donors found for selected blood group.</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map((d, index) => `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td><b>${d.fullName}</b></td>
+                            <td><span class="badge">${d.bloodGroup}</span></td>
+                            <td>${d.city}</td>
+                            <td>${d.phone || '9876543210'}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(err => {
+                    console.error(err);
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color: red;">Error fetching donors.</td></tr>';
+                });
+        }
+
+        // Load donors on page load
+        getDonors();
+    </script>
 
 </body>
 </html>

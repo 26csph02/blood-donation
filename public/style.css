@@ -114,6 +114,11 @@ button:hover {
     font-size: 20px;
 }
 
+.nav-right {
+    display: flex;
+    align-items: center;
+}
+
 .nav-right a {
     color: #444;
     text-decoration: none;
@@ -123,6 +128,75 @@ button:hover {
 
 .nav-right a:hover {
     color: #c9302c;
+}
+
+.nav-btn {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: bold;
+    display: inline-block;
+    text-decoration: none;
+}
+
+.nav-btn-login {
+    background-color: #c9302c;
+    color: #ffffff !important;
+}
+
+.nav-btn-login:hover {
+    background-color: #a0201c;
+}
+
+.nav-btn-register {
+    border: 1px solid #c9302c;
+    color: #c9302c !important;
+}
+
+.nav-btn-register:hover {
+    background-color: #fdf2f2;
+}
+
+.nav-btn-logout {
+    border: 1px solid #c9302c;
+    color: #c9302c !important;
+}
+
+.nav-btn-logout:hover {
+    background-color: #c9302c;
+    color: #ffffff !important;
+}
+
+.banner-btn {
+    display: inline-block;
+    padding: 10px 22px;
+    background-color: #ffffff;
+    color: #c9302c;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 15px;
+}
+
+.banner-btn:hover {
+    background-color: #f7f7f7;
+}
+
+.banner-btn-outline {
+    display: inline-block;
+    padding: 9px 20px;
+    border: 2px solid #ffffff;
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: bold;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 15px;
+    margin-left: 10px;
+}
+
+.banner-btn-outline:hover {
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* -----------------------------------

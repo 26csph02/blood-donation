@@ -63,14 +63,14 @@ const server = http.createServer(async (req, res) => {
 
     // 1. SERVE STATIC FILES (GET requests)
     if (req.method === 'GET') {
-        if (pathname === '/' || pathname === '/index.html') {
+        if (pathname === '/' || pathname === '/index.html' || pathname === '/home.html') {
             return serveFile(res, path.join(__dirname, 'public', 'index.html'), 'text/html');
+        }
+        if (pathname === '/login.html') {
+            return serveFile(res, path.join(__dirname, 'public', 'login.html'), 'text/html');
         }
         if (pathname === '/register.html') {
             return serveFile(res, path.join(__dirname, 'public', 'register.html'), 'text/html');
-        }
-        if (pathname === '/home.html') {
-            return serveFile(res, path.join(__dirname, 'public', 'home.html'), 'text/html');
         }
         if (pathname === '/style.css') {
             return serveFile(res, path.join(__dirname, 'public', 'style.css'), 'text/css');
@@ -127,7 +127,7 @@ const server = http.createServer(async (req, res) => {
                         const existing = await db.collection('donors').findOne({ email: email });
                         if (existing) {
                             res.writeHead(200, { 'Content-Type': 'text/html' });
-                            return res.end("<script>alert('Email already registered! Please login.'); window.location.href='/index.html';</script>");
+                            return res.end("<script>alert('Email already registered! Please login.'); window.location.href='/login.html';</script>");
                         }
                     }
                     await db.collection('donors').insertOne(newDonor);
@@ -135,11 +135,11 @@ const server = http.createServer(async (req, res) => {
                 localDonorList.unshift(newDonor);
 
                 res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end("<script>alert('Registration Successful! Please login.'); window.location.href='/index.html';</script>");
+                res.end("<script>alert('Registration Successful! Please login.'); window.location.href='/login.html';</script>");
             } catch (err) {
                 localDonorList.unshift(newDonor);
                 res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end("<script>alert('Registration Successful! Please login.'); window.location.href='/index.html';</script>");
+                res.end("<script>alert('Registration Successful! Please login.'); window.location.href='/login.html';</script>");
             }
         });
         return;
@@ -169,15 +169,15 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 if (user) {
-                    res.writeHead(302, { 'Location': `/home.html?name=${encodeURIComponent(user.fullName)}` });
+                    res.writeHead(302, { 'Location': `/index.html?name=${encodeURIComponent(user.fullName)}` });
                     res.end();
                 } else {
                     res.writeHead(200, { 'Content-Type': 'text/html' });
-                    res.end("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/index.html';</script>");
+                    res.end("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/login.html';</script>");
                 }
             } catch (err) {
                 res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/index.html';</script>");
+                res.end("<script>alert('Invalid Email or Password! Try again.'); window.location.href='/login.html';</script>");
             }
         });
         return;

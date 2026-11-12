@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Blood Donation System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Simple Top Navigation -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <h2><a href="index.html" style="text-decoration: none; color: #c9302c;">🩸 Blood Donation System</a></h2>
+        </div>
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="register.html">Register</a>
+        </div>
+    </div>
+
+    <!-- Login Form Card -->
+    <div class="login-box">
+        <h2>🩸 Donor Login</h2>
+        <p class="tagline">Please login to access your account</p>
+
+        <!-- Login Form -->
+        <form action="/login" method="POST">
+            <label>Email or Full Name:</label>
+            <input type="text" name="email" required placeholder="Enter registered email or name">
+
+            <label>Password:</label>
+            <input type="password" name="password" required placeholder="Enter your password">
+
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="bottom-links">
+            <p>New donor? <a href="register.html">Register here</a></p>
+            <p style="margin-top: 10px;"><a href="index.html">← Back to Home Page</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
