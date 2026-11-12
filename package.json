@@ -1,7 +1,7 @@
 {
   "name": "blood-donation-mini-project",
   "version": "1.0.0",
-  "description": "Simple Blood Donation Mini Project for College Students",
+  "description": "Blood Donation Management System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

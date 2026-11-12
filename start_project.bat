@@ -32,7 +32,7 @@ echo   Open your browser and visit:
 echo   http://localhost:3000
 echo ===================================================
 echo.
-echo (Keep this window open while presenting to examiners)
+echo (Keep this window open while the application is running)
 echo Press Ctrl + C to stop the server.
 echo.
 

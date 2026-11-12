@@ -1,6 +1,6 @@
 // ======================================================
-// Blood Donation Mini Project
-// Built with pure Node.js and MongoDB (No Express framework)
+// Blood Donation Management System
+// Backend Server - Node.js and MongoDB
 // ======================================================
 
 const http = require('http');
