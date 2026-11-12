@@ -7,7 +7,12 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const querystring = require('querystring');
-const { MongoClient } = require('mongodb');
+let MongoClient;
+try {
+    MongoClient = require('mongodb').MongoClient;
+} catch (e) {
+    console.log('[Notice] MongoDB driver not installed yet. Running with in-memory donor database.');
+}
 
 const PORT = 3000;
 
@@ -25,6 +30,9 @@ let db;
 
 // Function to connect to MongoDB (Atlas with Local fallback)
 async function connectDatabase() {
+    if (!MongoClient) {
+        return;
+    }
     try {
         const client = await MongoClient.connect(MONGO_URI, { serverSelectionTimeoutMS: 4000 });
         db = client.db('bloodDonationDB');
@@ -186,6 +194,16 @@ const server = http.createServer(async (req, res) => {
     // Default 404
     res.writeHead(404, { 'Content-Type': 'text/plain' });
     res.end('Page Not Found');
+});
+
+// Handle port errors gracefully
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.log(`\n[WARNING] Port ${PORT} is already in use by another program!`);
+        console.log(`Please close any existing Node.js or server command window, or restart your terminal.\n`);
+    } else {
+        console.error(err);
+    }
 });
 
 // Start Server on Port 3000
