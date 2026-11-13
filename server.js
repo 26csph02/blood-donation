@@ -203,11 +203,7 @@ const server = http.createServer(async (req, res) => {
 // Handle port errors gracefully
 server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${PORT} is busy, switching to alternate port 5000...`);
-        PORT = 5000;
-        server.listen(PORT, () => {
-            console.log(`Server running at http://localhost:${PORT}`);
-        });
+        console.log(`Port ${PORT} is already in use by another server instance.`);
     } else {
         console.error(err);
     }

@@ -3,44 +3,20 @@ title Blood Donation Project Server
 cd /d "%~dp0"
 
 echo ===================================================
-echo     Blood Donation System - Server Launcher
+echo     Blood Donation System - Launcher
 echo ===================================================
 echo.
 
-:: 1. Check if Node.js is installed
-where node >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo [ERROR] Node.js is not installed on this computer!
-    echo Please download and install Node.js from https://nodejs.org/
-    echo.
-    pause
-    exit /b
-)
+:: 1. Clear any stuck process on port 3000
+for /f "tokens=5" %%a in ('netstat -aon 2^>nul ^| findstr :3000 ^| findstr LISTENING') do taskkill /f /pid %%a >nul 2>&1
 
-:: 2. Check if dependencies are installed, if not install them
-if not exist node_modules (
-    echo [INFO] First-time setup: Installing dependencies...
-    call npm install
-    echo.
-)
-
-:: 3. Inform user of URL
-echo [INFO] Server is starting on Port 3000...
-echo.
-echo ===================================================
-echo   Open your browser and visit:
-echo   http://localhost:3000
-echo ===================================================
-echo.
-echo (Keep this window open while the application is running)
-echo Press Ctrl + C to stop the server.
-echo.
-
-:: 4. Attempt to open browser automatically
+:: 2. Open browser automatically
+echo [INFO] Opening Blood Donation System in your browser...
 start "" "http://localhost:3000"
 
-:: 5. Run Node.js Server
-node server.js
-
+:: 3. Start Node.js server
+echo [INFO] Server running at http://localhost:3000
+echo (Keep this window open while using the project)
 echo.
+node server.js
 pause
