@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register - Blood Donation System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Simple Top Navigation -->
+    <div class="top-nav">
+        <div class="nav-left">
+            <h2><a href="index.html" style="text-decoration: none; color: #c9302c;">🩸 Blood Donation System</a></h2>
+        </div>
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="login.html">Login</a>
+        </div>
+    </div>
+
+    <!-- Registration Card -->
+    <div class="login-box" style="width: 400px;">
+        <h2>🩸 Donor Registration</h2>
+        <p class="tagline">Create an account to become a voluntary donor</p>
+
+        <!-- Registration Form -->
+        <form id="regForm" action="/register" method="POST">
+            <label>Full Name:</label>
+            <input type="text" name="fullName" required placeholder="e.g. Rahul Sharma">
+
+            <label>Email Address:</label>
+            <input type="email" name="email" required placeholder="e.g. rahul@example.com">
+
+            <label>Contact Phone:</label>
+            <input type="tel" name="phone" required placeholder="e.g. 9876543210">
+
+            <label>Blood Group:</label>
+            <select name="bloodGroup" required>
+                <option value="">-- Select Blood Group --</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+            </select>
+
+            <label>City / Town:</label>
+            <input type="text" name="city" required placeholder="e.g. Mumbai, Bengaluru">
+
+            <label>Password:</label>
+            <input type="password" name="password" required placeholder="Enter password">
+
+            <button type="submit">Register as Donor</button>
+        </form>
+
+        <div class="bottom-links">
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+            <p style="margin-top: 10px;"><a href="index.html">← Back to Home Page</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('regForm').addEventListener('submit', function(e) {
+            // Direct in browser without server (file:// or GitHub Pages)
+            if (window.location.protocol === 'file:') {
+                e.preventDefault();
+                const fullName = document.querySelector('[name="fullName"]').value.trim();
+                const email = document.querySelector('[name="email"]').value.trim();
+                const phone = document.querySelector('[name="phone"]').value.trim();
+                const bloodGroup = document.querySelector('[name="bloodGroup"]').value;
+                const city = document.querySelector('[name="city"]').value.trim();
+                const password = document.querySelector('[name="password"]').value.trim();
+
+                let donors = JSON.parse(localStorage.getItem('bloodDonors')) || [
+                    { fullName: 'Merin K Joseph', bloodGroup: 'AB-', city: 'Mumbai', phone: '1234567890', email: 'merinkarukappallil@gmail.com', password: '123' },
+                    { fullName: 'Rahul Sharma', bloodGroup: 'A+', city: 'Delhi', phone: '9876543211', email: 'rahul@test.com', password: '123' },
+                    { fullName: 'Nivedya', bloodGroup: 'O+', city: 'Mumbai', phone: '9876543210', email: 'nivedya@test.com', password: '123' },
+                    { fullName: 'John Doe', bloodGroup: 'O+', city: 'Bengaluru', phone: '9876543210', email: 'john@test.com', password: '123' }
+                ];
+
+                // Check duplicate email
+                const existing = donors.find(d => d.email && d.email.toLowerCase() === email.toLowerCase());
+                if (existing) {
+                    alert("Email already registered! Please login.");
+                    window.location.href = "login.html";
+                    return;
+                }
+
+                const newDonor = { fullName, email, phone, bloodGroup, city, password };
+                donors.unshift(newDonor);
+                localStorage.setItem('bloodDonors', JSON.stringify(donors));
+
+                alert("Registration Successful! Please login.");
+                window.location.href = "login.html";
+            }
+            // If running on http://, form naturally POSTs to Node.js /register
+        });
+    </script>
+
+</body>
+</html>

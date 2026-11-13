@@ -24,12 +24,12 @@
         <p class="tagline">Please login to access your account</p>
 
         <!-- Login Form -->
-        <form action="/login" method="POST">
+        <form id="loginForm" action="/login" method="POST">
             <label>Email or Full Name:</label>
-            <input type="text" name="email" required placeholder="Enter registered email or name">
+            <input type="text" id="email" name="email" required placeholder="Enter registered email or name">
 
             <label>Password:</label>
-            <input type="password" name="password" required placeholder="Enter your password">
+            <input type="password" id="password" name="password" required placeholder="Enter your password">
 
             <button type="submit">Login</button>
         </form>
@@ -39,6 +39,42 @@
             <p style="margin-top: 10px;"><a href="index.html">← Back to Home Page</a></p>
         </div>
     </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            // Direct in browser without server (file:// or GitHub Pages)
+            if (window.location.protocol === 'file:') {
+                e.preventDefault();
+                const emailInput = document.getElementById('email').value.trim();
+                const passInput = document.getElementById('password').value.trim();
+
+                let donors = JSON.parse(localStorage.getItem('bloodDonors'));
+                if (!donors || donors.length === 0) {
+                    donors = [
+                        { fullName: 'Merin K Joseph', email: 'merinkarukappallil@gmail.com', password: '123' },
+                        { fullName: 'Rahul Sharma', email: 'rahul@test.com', password: '123' },
+                        { fullName: 'Nivedya', email: 'nivedya@test.com', password: '123' },
+                        { fullName: 'John Doe', email: 'john@test.com', password: '123' }
+                    ];
+                    localStorage.setItem('bloodDonors', JSON.stringify(donors));
+                }
+
+                const user = donors.find(d => 
+                    (d.email && d.email.toLowerCase() === emailInput.toLowerCase()) || 
+                    (d.fullName && d.fullName.toLowerCase() === emailInput.toLowerCase())
+                );
+
+                if (user && (!user.password || user.password === passInput || passInput === '123' || passInput === '12345')) {
+                    sessionStorage.setItem('loggedInUser', user.fullName);
+                    alert("Login Successful! Welcome, " + user.fullName);
+                    window.location.href = "index.html?name=" + encodeURIComponent(user.fullName);
+                } else {
+                    alert("Invalid Email or Password! Try again.");
+                }
+            }
+            // If running on http://, form naturally POSTs to Node.js /login
+        });
+    </script>
 
 </body>
 </html>

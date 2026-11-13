@@ -52,7 +52,11 @@ async function connectDatabase() {
 connectDatabase();
 
 // Helper function to serve HTML, CSS files
-function serveFile(res, filePath, contentType) {
+function serveFile(res, fileName, contentType) {
+    let filePath = path.join(__dirname, 'public', fileName);
+    if (!fs.existsSync(filePath)) {
+        filePath = path.join(__dirname, fileName);
+    }
     fs.readFile(filePath, (err, data) => {
         if (err) {
             res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -72,16 +76,16 @@ const server = http.createServer(async (req, res) => {
     // 1. SERVE STATIC FILES (GET requests)
     if (req.method === 'GET') {
         if (pathname === '/' || pathname === '/index.html' || pathname === '/home.html') {
-            return serveFile(res, path.join(__dirname, 'public', 'index.html'), 'text/html');
+            return serveFile(res, 'index.html', 'text/html');
         }
         if (pathname === '/login.html') {
-            return serveFile(res, path.join(__dirname, 'public', 'login.html'), 'text/html');
+            return serveFile(res, 'login.html', 'text/html');
         }
         if (pathname === '/register.html') {
-            return serveFile(res, path.join(__dirname, 'public', 'register.html'), 'text/html');
+            return serveFile(res, 'register.html', 'text/html');
         }
         if (pathname === '/style.css') {
-            return serveFile(res, path.join(__dirname, 'public', 'style.css'), 'text/css');
+            return serveFile(res, 'style.css', 'text/css');
         }
 
         // 2. API ROUTE: GET DONORS (Search & Filter)
